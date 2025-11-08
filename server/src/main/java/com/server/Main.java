@@ -40,22 +40,23 @@ public class Main {
         Socket setBattlePos = s1;
         BufferedReader setIn = in1;
         PrintWriter setOut = out1;
-        int [][] currentBoard = board1;
-
+        int[][] currentBoard = board1;
 
         while (inc < 2) {
             for (int i = 1; i < 4; i++) {
 
                 do {
-                    setOut.println("insert x(line) of " + i + " ship(0-4): ");
+                    // client - setOut.println("insert x(line) of " + i + " ship(0-4): ");
                     inputX = Integer.parseInt(setIn.readLine());
-                    setOut.println("insert y(column) of " + i + " ship(0-4): ");
+                    // client - setOut.println("insert y(column) of " + i + " ship(0-4): ");
                     inputY = Integer.parseInt(setIn.readLine());
 
                 } while (checkIfExist(inputX) || checkIfExist(inputY));
 
                 currentBoard[inputX][inputY] = 1;
             }
+
+            setOut.println("PLACED");
 
             if (status) {
                 status = false;
@@ -74,13 +75,102 @@ public class Main {
             inc++;
         }
 
-        
+        int newX = 0;
+        int newY = 0;
+
+        while (true) {
+
+            int[][] attackedBoard = currentBoard;
+            if (currentBoard == board1) {
+                attackedBoard = board2;
+            } else {
+                attackedBoard = board1;
+            }
+            do {
+                newX = Integer.parseInt(setIn.readLine());
+                newY = Integer.parseInt(setIn.readLine());
+                if ((checkIfExist(newY) || checkIfExist(newX))) {
+                    setOut.println("INVALID");
+                }
+                if (checkIfItAlreadyHitted(newX, newY, attackedBoard)) {
+                    setOut.println("INVALID");
+
+                }
+            } while (checkIfExist(newY) || checkIfExist(newX) || checkIfItAlreadyHitted(newX, newY, attackedBoard));
+
+            if (!checkIfItAlreadyHitted(newX, newY, attackedBoard)) {
+                attackedBoard[newX][newY] = 2;
+                setOut.println("HIT");
+            }
+
+            if (checkIfItAlreadyHitted(newX, newY, attackedBoard)) {
+                attackedBoard[newX][newY] = 3;
+                setOut.println("MISS");
+            }
+
+            if(checkWin(newX, newY, attackedBoard)){
+                setOut.println("WIN");
+                break;
+            }
+
+            if (status) {
+                status = false;
+                setBattlePos = s2;
+                setIn = in2;
+                setOut = out2;
+                currentBoard = board2;
+            } else {
+                status = true;
+                setBattlePos = s1;
+                setIn = in1;
+                setOut = out1;
+                currentBoard = board1;
+            }
+        }
+
     }
 
     public static Boolean checkIfExist(int v) {
 
         return v >= 0 && v <= 4;
 
+    }
+
+    public static Boolean checkIfItAlreadyHitted(int x, int y, int[][] attackedBoard) {
+
+        if (attackedBoard[x][y] == 1) {
+            return false;
+        }
+
+        return true;
+
+    }
+
+    public static String stampaBoardAvversario(int[][] attackedBoard){
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                sb.append(attackedBoard[i][j]);
+                sb.append(",");
+            }
+        }
+        sb.append("");
+        return sb.toString();
+    }
+
+    public static Boolean checkWin(int x, int y, int [][] attackedBoard) {
+        int contatore1 = 0;
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                if(attackedBoard[i][j] == 1){
+                    contatore1++;
+                }
+            }
+        }
+        if(contatore1 == 3){
+            return true;
+        }
+        return false;
     }
 
 }
