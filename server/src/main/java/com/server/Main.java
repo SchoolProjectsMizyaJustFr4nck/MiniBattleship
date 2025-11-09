@@ -10,7 +10,6 @@ import java.net.Socket;
 public class Main {
 
     private static boolean status = true;
-    private static int inc = 0;
     static int[][] board1 = new int[5][5];
     static int[][] board2 = new int[5][5];
 
@@ -39,62 +38,97 @@ public class Main {
         BufferedReader in2 = new BufferedReader(new InputStreamReader(s2.getInputStream()));
         PrintWriter out2 = new PrintWriter(s2.getOutputStream(), true);
 
-        out1.println("READY");
-        out2.println("READY");
+        // li ho tolti per cambiare i player nella disposizione nelle navi
+        // out1.println("READY");
+        // out2.println("READY");
 
         Socket setBattlePos = s1;
         BufferedReader setIn = in1;
         PrintWriter setOut = out1;
         int[][] currentBoard = board1;
 
+        int player = 1; // 1 = p1, 2 = p2
+        int inc = 0;
+
         while (inc < 2) {
-            if (inc == 0) {
-                out2.println("WAIT");
 
-            } else {
-                out2.print("READY");
-            }
-
-            for (int i = 0; i < 3; i++) {
-                int inputX = -1;
-                int inputY = -1;
-
-                do {
-                    try {
-                        String sx = setIn.readLine();
-                        String sy = setIn.readLine();
-                        inputX = Integer.parseInt(sx);
-                        inputY = Integer.parseInt(sy);
-                    } catch (NumberFormatException | NullPointerException e) {
-                        inputX = -1;
-                        inputY = -1;
-                    }
-                } while (!checkIfExist(inputX) || !checkIfExist(inputY) || currentBoard[inputX][inputY] == 1);
-
-                currentBoard[inputX][inputY] = 1;
-            }
-
-            setOut.println("PLACED");
-
-            if (status) {
-                status = false;
-                setBattlePos = s2;
-                setIn = in2;
-                setOut = out2;
-                currentBoard = board2;
-            } else {
-                status = true;
+            if (player == 1) {
                 setBattlePos = s1;
                 setIn = in1;
                 setOut = out1;
                 currentBoard = board1;
+            } else {
+                setBattlePos = s2;
+                setIn = in2;
+                setOut = out2;
+                currentBoard = board2;
+            }
+
+            setOut.println("READY");
+
+            if (player == 1) {
+                out2.println("WAIT");
+            } else {
+                out1.println("WAIT");
+            }
+
+            int shipsPlaced = 0;
+            while (shipsPlaced < 3) {
+                int x = -1;
+                int y = -1;
+                boolean valid;
+
+                do {
+                    try {
+                        x = Integer.parseInt(setIn.readLine());
+                        y = Integer.parseInt(setIn.readLine());
+                    } catch (Exception e) {
+                        x = -1;
+                        y = -1;
+                    }
+
+                    valid = checkIfExist(x) && checkIfExist(y) && currentBoard[x][y] == 0;
+                    if (!valid) {
+                        setOut.println("INVALID");
+                    } else {
+
+                        setOut.println("ACCEPT");
+                    }
+
+                } while (!valid);
+
+                currentBoard[x][y] = 1;
+                shipsPlaced++;
+            }
+
+            setOut.println("PLACED");
+
+            // next player
+            if (player == 1) {
+                player = 2;
+            } else {
+                player = 1;
             }
 
             inc++;
         }
 
+        setBattlePos = s1;
+        setIn = in1;
+        setOut = out1;
+        currentBoard = board1;
+
+        out1.println("READY");
+        out2.println("WAIT");
+
         while (true) {
-            int[][] attackedBoard = (currentBoard == board1) ? board2 : board1;
+            int[][] attackedBoard;
+
+            if (currentBoard == board1) {
+                attackedBoard = board2;
+            } else {
+                attackedBoard = board1;
+            }
 
             int newX = -1;
             int newY = -1;
@@ -123,15 +157,25 @@ public class Main {
                 setOut.println("MISS");
             }
 
+            String enemyBoard = printEnemyBoard(attackedBoard);
+            String yourBoard = printYourBoard(currentBoard);
+            setOut.println("ENEMY_BOARD:" + enemyBoard);
+            setOut.println("YOUR_BOARD:" + yourBoard);
+
             if (checkWin(attackedBoard)) {
                 setOut.println("WIN");
+
+                if (setOut == out1) {
+                    out2.println("LOSE");
+                } else {
+                    out1.println("LOSE");
+                }
+
+                out1.println(printYourBoard(board1));
+                out2.println(printEnemyBoard(board2));
+
                 break;
             }
-
-            // clint - setOut.println("ENEMY_BOARD");
-            setOut.println(printBoard(attackedBoard));
-            // clint - setOut.println("YOUR_BOARD");
-            setOut.println(printBoard(currentBoard));
 
             if (status) {
                 status = false;
@@ -139,12 +183,16 @@ public class Main {
                 setIn = in2;
                 setOut = out2;
                 currentBoard = board2;
+                out1.println("WAIT");
+                out2.println("READY");
             } else {
                 status = true;
                 setBattlePos = s1;
                 setIn = in1;
                 setOut = out1;
                 currentBoard = board1;
+                out2.println("WAIT");
+                out1.println("READY");
             }
         }
 
@@ -162,7 +210,26 @@ public class Main {
         return val == 2 || val == 3;
     }
 
-    public static String printBoard(int[][] board) {
+    // per non visuallizare le posizioni delle navi dell'aversario
+    public static String printEnemyBoard(int[][] board) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                if (board[i][j] == 1) {
+                    sb.append("0");
+                } else {
+                    sb.append(board[i][j]);
+                }
+                if (j < 4)
+                    sb.append(",");
+            }
+            if (i < 4)
+                sb.append(";");
+        }
+        return sb.toString();
+    }
+
+    public static String printYourBoard(int[][] board) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
@@ -170,7 +237,8 @@ public class Main {
                 if (j < 4)
                     sb.append(",");
             }
-            sb.append("\n");
+            if (i < 4)
+                sb.append(";");
         }
         return sb.toString();
     }
