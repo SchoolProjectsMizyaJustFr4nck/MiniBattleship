@@ -16,6 +16,13 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                board1[i][j] = 0;
+                board2[i][j] = 0;
+            }
+        }
+
         ServerSocket ss = new ServerSocket(3000);
         System.out.println("Server listening on port: 3000");
 
@@ -41,6 +48,13 @@ public class Main {
         int[][] currentBoard = board1;
 
         while (inc < 2) {
+            if (inc == 0) {
+                out2.println("WAIT");
+
+            } else {
+                out2.print("READY");
+            }
+
             for (int i = 0; i < 3; i++) {
                 int inputX = -1;
                 int inputY = -1;
@@ -153,7 +167,8 @@ public class Main {
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
                 sb.append(board[i][j]);
-                if (j < 4) sb.append(",");
+                if (j < 4)
+                    sb.append(",");
             }
             sb.append("\n");
         }
@@ -164,10 +179,10 @@ public class Main {
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
                 if (attackedBoard[i][j] == 1) {
-                    return false; 
+                    return false;
                 }
             }
         }
-        return true; 
+        return true;
     }
 }
